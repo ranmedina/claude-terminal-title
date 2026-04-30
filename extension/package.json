@@ -1,0 +1,81 @@
+{
+  "name": "claude-terminal-title",
+  "displayName": "Claude Terminal Title",
+  "description": "Lets Claude Code (and any process) rename the active terminal tab so you stop guessing which one is which.",
+  "version": "1.0.1",
+  "publisher": "ranmedina",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ranmedina/claude-terminal-title.git"
+  },
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "icon": "icon.png",
+  "galleryBanner": {
+    "color": "#1A1F36",
+    "theme": "dark"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./src/extension.js",
+  "scripts": {
+    "test": "node --test test/*.test.js"
+  },
+  "contributes": {
+    "configuration": {
+      "title": "Claude Terminal Title",
+      "properties": {
+        "claudeTerminalTitle.updateMode": {
+          "type": "string",
+          "enum": [
+            "firstOnly",
+            "always"
+          ],
+          "enumDescriptions": [
+            "Claude renames each terminal once. After that the title sticks until you reset it.",
+            "Claude can rename a terminal whenever it wants."
+          ],
+          "default": "firstOnly",
+          "description": "How aggressively the extension applies titles written by Claude."
+        },
+        "claudeTerminalTitle.skipClaudeIntegrationPrompt": {
+          "type": "boolean",
+          "default": false,
+          "description": "Don't prompt to install the Claude Code skill on activation."
+        }
+      }
+    },
+    "commands": [
+      {
+        "command": "claudeTerminalTitle.setTitle",
+        "title": "Claude: Set Terminal Title"
+      },
+      {
+        "command": "claudeTerminalTitle.resetTitle",
+        "title": "Claude: Reset Terminal Title (allow Claude to rename again)"
+      },
+      {
+        "command": "claudeTerminalTitle.scanNow",
+        "title": "Claude: Re-scan Terminals For Claude"
+      },
+      {
+        "command": "claudeTerminalTitle.installClaudeIntegration",
+        "title": "Claude: Install Claude Code Integration"
+      }
+    ],
+    "menus": {
+      "terminal/context": [
+        {
+          "command": "claudeTerminalTitle.setTitle",
+          "group": "rename"
+        }
+      ]
+    }
+  }
+}

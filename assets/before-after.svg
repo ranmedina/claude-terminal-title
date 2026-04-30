@@ -1,0 +1,97 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 540" width="1280" height="540">
+  <style>
+    .bg { fill: #0d1117; }
+    .panel { fill: #161b22; stroke: #30363d; stroke-width: 1; }
+    .label { font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, system-ui, sans-serif; font-weight: 700; letter-spacing: .04em; fill: #8b949e; font-size: 13px; }
+    .row-bg { fill: transparent; }
+    .row-bg.active { fill: #1f6feb22; }
+    .row { font-family: 'SF Pro Text', -apple-system, system-ui, sans-serif; font-size: 14px; fill: #c9d1d9; }
+    .row.dim { fill: #6e7681; }
+    .row.bright { fill: #58a6ff; font-weight: 600; }
+    .row.accent { fill: #7ee787; font-weight: 600; }
+    .arrow { fill: #58a6ff; }
+    .arrow-text { font-family: 'SF Mono', ui-monospace, monospace; font-size: 18px; fill: #58a6ff; font-weight: 600; }
+    .icon { fill: #6e7681; }
+    .badge { fill: #1f6feb; }
+    .badge-text { font-family: 'SF Pro Text', system-ui, sans-serif; font-size: 11px; fill: #ffffff; font-weight: 700; letter-spacing: .04em; }
+    .footnote { font-family: 'SF Pro Text', system-ui, sans-serif; font-size: 12px; fill: #6e7681; font-style: italic; }
+  </style>
+
+  <rect class="bg" width="1280" height="540"/>
+
+  <!-- BEFORE panel -->
+  <g transform="translate(80,80)">
+    <text class="label" x="0" y="0">BEFORE</text>
+    <rect class="panel" x="0" y="20" width="440" height="380" rx="8"/>
+    <g transform="translate(20,60)">
+      <!-- 5 rows -->
+      <g transform="translate(0,0)">
+        <rect class="row-bg" width="400" height="44" rx="4"/>
+        <path class="icon" transform="translate(12,15) scale(0.85)" d="M3 3h14v14H3zm2 2v10h10V5zm2 2h6v2H7zm0 4h6v2H7z"/>
+        <text class="row dim" x="42" y="28">zsh</text>
+      </g>
+      <g transform="translate(0,52)">
+        <rect class="row-bg" width="400" height="44" rx="4"/>
+        <path class="icon" transform="translate(12,15) scale(0.85)" d="M3 3h14v14H3zm2 2v10h10V5zm2 2h6v2H7zm0 4h6v2H7z"/>
+        <text class="row dim" x="42" y="28">node</text>
+      </g>
+      <g transform="translate(0,104)">
+        <rect class="row-bg active" width="400" height="44" rx="4"/>
+        <path class="icon" transform="translate(12,15) scale(0.85)" d="M3 3h14v14H3zm2 2v10h10V5zm2 2h6v2H7zm0 4h6v2H7z"/>
+        <text class="row dim" x="42" y="28">2.1.123</text>
+      </g>
+      <g transform="translate(0,156)">
+        <rect class="row-bg" width="400" height="44" rx="4"/>
+        <path class="icon" transform="translate(12,15) scale(0.85)" d="M3 3h14v14H3zm2 2v10h10V5zm2 2h6v2H7zm0 4h6v2H7z"/>
+        <text class="row dim" x="42" y="28">zsh</text>
+      </g>
+      <g transform="translate(0,208)">
+        <rect class="row-bg" width="400" height="44" rx="4"/>
+        <path class="icon" transform="translate(12,15) scale(0.85)" d="M3 3h14v14H3zm2 2v10h10V5zm2 2h6v2H7zm0 4h6v2H7z"/>
+        <text class="row dim" x="42" y="28">node</text>
+      </g>
+    </g>
+    <text class="footnote" x="0" y="430">which one was the dev server again?</text>
+  </g>
+
+  <!-- Arrow -->
+  <g transform="translate(595,260)">
+    <text class="arrow-text" x="0" y="0">───►</text>
+  </g>
+
+  <!-- AFTER panel -->
+  <g transform="translate(760,80)">
+    <text class="label" x="0" y="0" style="fill:#7ee787">AFTER</text>
+    <rect class="panel" x="0" y="20" width="440" height="380" rx="8" style="stroke:#7ee78744"/>
+    <g transform="translate(20,60)">
+      <g transform="translate(0,0)">
+        <rect class="row-bg" width="400" height="44" rx="4"/>
+        <path class="icon" transform="translate(12,15) scale(0.85)" style="fill:#7ee787" d="M3 3h14v14H3zm2 2v10h10V5zm2 2h6v2H7zm0 4h6v2H7z"/>
+        <text class="row" x="42" y="28">myapp · dev server</text>
+      </g>
+      <g transform="translate(0,52)">
+        <rect class="row-bg" width="400" height="44" rx="4"/>
+        <path class="icon" transform="translate(12,15) scale(0.85)" style="fill:#7ee787" d="M3 3h14v14H3zm2 2v10h10V5zm2 2h6v2H7zm0 4h6v2H7z"/>
+        <text class="row" x="42" y="28">api-server</text>
+      </g>
+      <g transform="translate(0,104)">
+        <rect class="row-bg active" width="400" height="44" rx="4"/>
+        <path class="icon" transform="translate(12,15) scale(0.85)" style="fill:#7ee787" d="M3 3h14v14H3zm2 2v10h10V5zm2 2h6v2H7zm0 4h6v2H7z"/>
+        <text class="row bright" x="42" y="28">Auth Refactor</text>
+        <rect class="badge" x="280" y="13" width="92" height="20" rx="10"/>
+        <text class="badge-text" x="294" y="27">claude</text>
+      </g>
+      <g transform="translate(0,156)">
+        <rect class="row-bg" width="400" height="44" rx="4"/>
+        <path class="icon" transform="translate(12,15) scale(0.85)" style="fill:#7ee787" d="M3 3h14v14H3zm2 2v10h10V5zm2 2h6v2H7zm0 4h6v2H7z"/>
+        <text class="row" x="42" y="28">review · PR #42</text>
+      </g>
+      <g transform="translate(0,208)">
+        <rect class="row-bg" width="400" height="44" rx="4"/>
+        <path class="icon" transform="translate(12,15) scale(0.85)" style="fill:#7ee787" d="M3 3h14v14H3zm2 2v10h10V5zm2 2h6v2H7zm0 4h6v2H7z"/>
+        <text class="row" x="42" y="28">BUG-42 Login Fix</text>
+      </g>
+    </g>
+    <text class="footnote" x="0" y="430" style="fill:#7ee787">oh, that one.</text>
+  </g>
+</svg>
