@@ -13,15 +13,16 @@ bash ~/.claude/skills/terminal-title/scripts/set_title.sh "<short title>"
 
 ## Title format
 
-`<topic>` or `<repo> · <topic>` if the repo isn't obvious from context. Keep under 40 characters.
+Just `<topic>`. Keep under 40 characters. Don't prefix with the repo or folder name — the tab icon and window already convey that.
 
 Good:
 - `Auth Refactor`
 - `BUG-42 Login Fix`
-- `myapp · review PR #42`
-- `myapp · settings sidebar`
+- `review PR #42`
+- `settings sidebar`
 
 Bad:
+- `myapp · settings sidebar` (repo prefix is redundant)
 - `Working on the auth refactor feature for the app` (too long)
 - `Helping the user with their task` (vague)
 - `Bash` / `node` / `zsh` (default editor names — pointless)

@@ -2,13 +2,26 @@
   "name": "claude-terminal-title",
   "displayName": "Claude Terminal Title",
   "description": "Lets Claude Code (and any process) rename the active terminal tab so you stop guessing which one is which.",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "publisher": "ranmedina",
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/ranmedina/claude-terminal-title.git"
   },
+  "homepage": "https://github.com/ranmedina/claude-terminal-title#readme",
+  "bugs": {
+    "url": "https://github.com/ranmedina/claude-terminal-title/issues"
+  },
+  "keywords": [
+    "claude",
+    "claude-code",
+    "terminal",
+    "tab",
+    "title",
+    "rename",
+    "anthropic"
+  ],
   "engines": {
     "vscode": "^1.85.0"
   },

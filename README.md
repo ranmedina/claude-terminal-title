@@ -134,6 +134,9 @@ cursor --install-extension ./claude-terminal-title-*.vsix --force
 ./publish.sh minor
 ./publish.sh major
 
+export VSCE_PAT="<from https://dev.azure.com → User Settings → PATs (Marketplace: Manage)>"
+./publish-vscode.sh
+
 export OVSX_PAT="<from https://open-vsx.org/user-settings/tokens>"
 ./publish-openvsx.sh
 ```

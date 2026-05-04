@@ -9,11 +9,21 @@ const HOME = os.homedir();
 const SIGNAL_FILE = path.join(HOME, '.claude-terminal-title');
 const SKILL_DIR = path.join(HOME, '.claude', 'skills', 'terminal-title');
 const SETTINGS_FILE = path.join(HOME, '.claude', 'settings.json');
-const SESSION_HOOK_MATCHER = 'claude-terminal-title';
+// SessionStart hook is matcher-less ('.*') so it fires for every source
+// (startup/resume/clear/compact). The tag is embedded in the command itself
+// for dedup on re-install (a colon-prefixed shell no-op).
+const SESSION_HOOK_TAG = 'claude-terminal-title';
+// Hook delegates to set_title.sh --placeholder, which walks the process tree
+// to find the originating terminal's PID and writes "<pid>\t<title>". That
+// PID prefix lets the watcher scope the rename to the terminal that issued it.
+// The trailing echo seeds Claude's session-start context with an explicit
+// reminder to refine the placeholder once the conversation topic is clear —
+// otherwise Claude often answers the user's question without ever invoking
+// the terminal-title skill, leaving the placeholder stuck.
 const SESSION_HOOK_CMD =
-  'title=$(git -C "$PWD" branch --show-current 2>/dev/null); ' +
-  '[[ -z "$title" ]] && title="${PWD##*/}"; ' +
-  'printf "%s" "$title" > "$HOME/.claude-terminal-title"';
+  ': ' + SESSION_HOOK_TAG + '; ' +
+  'bash "$HOME/.claude/skills/terminal-title/scripts/set_title.sh" --placeholder; ' +
+  'echo "[terminal-title] Title is the session-start placeholder. After your first response, refine it with a concise topic via: bash ~/.claude/skills/terminal-title/scripts/set_title.sh \\"<topic>\\""';
 
 let output;
 function log(...args) {
@@ -107,24 +117,48 @@ function setupSignalWatcher(context) {
 
   let lastSeen = '';
   const apply = async () => {
-    let next;
-    try { next = fs.readFileSync(SIGNAL_FILE, 'utf8').trim(); } catch (_) { return; }
-    if (!next || next === lastSeen) return;
-    lastSeen = next;
+    let raw;
+    try { raw = fs.readFileSync(SIGNAL_FILE, 'utf8'); } catch (_) { return; }
+    if (!raw || raw === lastSeen) return;
+    lastSeen = raw;
+
+    // Format: "<originPid>\t<title>". Older format (no tab) is from before
+    // the scoping change — ignore it; the next write will use the new format.
+    const tab = raw.indexOf('\t');
+    if (tab < 0) return;
+    const originPid = Number(raw.slice(0, tab).trim());
+    const title = raw.slice(tab + 1).trim();
+    if (!Number.isFinite(originPid) || originPid <= 0 || !title) return;
+
+    // Match the originPid to a terminal in this window. If none matches, the
+    // call came from another window — skip silently. This is what scopes
+    // /title to the originating terminal across windows.
+    let target = null;
+    for (const t of vscode.window.terminals) {
+      try {
+        const pid = await t.processId;
+        if (pid === originPid) { target = t; break; }
+      } catch (_) {}
+    }
+    if (!target) return;
 
     const cfg = vscode.workspace.getConfiguration('claudeTerminalTitle');
     const mode = cfg.get('updateMode') || 'firstOnly';
-    const target = vscode.window.activeTerminal;
-    if (!target) return;
     const st = stateFor(target);
-    const verdict = decide(st, next, { kind: 'signal', mode });
+    // Placeholder format ("Claude" / "Claude • <folder>") is applied but
+    // doesn't lock the terminal — Claude's later real-title write still wins.
+    const isPlaceholder = title === 'Claude' || title.startsWith('Claude • ');
+    const verdict = decide(st, title, { kind: 'signal', mode });
     if (verdict === 'skip-locked') {
-      log(`firstOnly — skipping "${next}" (terminal already titled)`);
+      log(`firstOnly — skipping "${title}" (terminal already titled)`);
       return;
     }
     if (verdict === 'skip-noop') return;
-    const ok = await applyTitle(target, next);
-    if (ok) st.titled = true;
+    const ok = await applyTitle(target, title);
+    if (ok) {
+      if (isPlaceholder) st.placeholderApplied = true;
+      else st.titled = true;
+    }
   };
 
   try {
@@ -142,6 +176,29 @@ function setupSignalWatcher(context) {
 // ────────────────────────────────────────────────────────────────────────────
 function isWiredUp() {
   return fs.existsSync(path.join(SKILL_DIR, 'SKILL.md'));
+}
+
+const VERSION_MARKER = path.join(SKILL_DIR, '.installed-version');
+
+function readInstalledVersion() {
+  try { return fs.readFileSync(VERSION_MARKER, 'utf8').trim(); } catch (_) { return ''; }
+}
+
+function currentExtensionVersion(context) {
+  try { return require(path.join(context.extensionPath, 'package.json')).version || ''; }
+  catch (_) { return ''; }
+}
+
+// Re-run the install silently when the extension is newer than the wired-up
+// files on disk — covers users who upgrade the extension but never re-trigger
+// the manual install command.
+function maybeRefreshInstall(context) {
+  if (!isWiredUp()) return; // brand-new user — handled by offerToInstallClaudeIntegration
+  const cur = currentExtensionVersion(context);
+  if (!cur) return;
+  if (readInstalledVersion() === cur) return;
+  log(`refreshing wired skill: "${readInstalledVersion() || '(none)'}" → "${cur}"`);
+  installClaudeIntegration(context, { silent: true }).catch((e) => log('refresh failed', String(e)));
 }
 
 async function offerToInstallClaudeIntegration(context) {
@@ -180,7 +237,8 @@ function atomicWriteJSON(filePath, obj) {
   fs.renameSync(tmp, filePath);
 }
 
-async function installClaudeIntegration(context) {
+async function installClaudeIntegration(context, opts = {}) {
+  const { silent = false } = opts;
   try {
     // 1. Read existing settings safely. NEVER silently overwrite a malformed file.
     fs.mkdirSync(path.dirname(SETTINGS_FILE), { recursive: true });
@@ -196,10 +254,12 @@ async function installClaudeIntegration(context) {
             throw new Error('settings.json is not a JSON object');
           }
         } catch (e) {
-          vscode.window.showErrorMessage(
-            `Claude Terminal Title: ~/.claude/settings.json is malformed (${e.message}). ` +
-            `Refusing to overwrite. Fix the file and run "Claude: Install Claude Code Integration" again.`
-          );
+          if (!silent) {
+            vscode.window.showErrorMessage(
+              `Claude Terminal Title: ~/.claude/settings.json is malformed (${e.message}). ` +
+              `Refusing to overwrite. Fix the file and run "Claude: Install Claude Code Integration" again.`
+            );
+          }
           log('install aborted: settings.json malformed', String(e));
           return;
         }
@@ -220,9 +280,14 @@ async function installClaudeIntegration(context) {
     // 3. Update settings — backup then atomic-write.
     settings.hooks ||= {};
     settings.hooks.SessionStart ||= [];
-    settings.hooks.SessionStart = settings.hooks.SessionStart.filter((h) => h.matcher !== SESSION_HOOK_MATCHER);
+    // Dedup by tag embedded in the command — also catches stale entries from
+    // older versions that put the tag in the `matcher` field instead.
+    settings.hooks.SessionStart = settings.hooks.SessionStart.filter((h) => {
+      if (h.matcher === SESSION_HOOK_TAG) return false;
+      return !(h.hooks || []).some((hh) => (hh.command || '').includes(SESSION_HOOK_TAG));
+    });
     settings.hooks.SessionStart.push({
-      matcher: SESSION_HOOK_MATCHER,
+      matcher: '.*',
       hooks: [{ type: 'command', command: SESSION_HOOK_CMD }],
     });
     if (settingsExisted) {
@@ -241,10 +306,19 @@ async function installClaudeIntegration(context) {
       fs.copyFileSync(cmdSrc, cmdDest);
     }
 
-    vscode.window.showInformationMessage('Claude Terminal Title — Claude Code skill installed.');
-    log('Wired up skill + SessionStart hook + /title command');
+    // 5. Stamp the version marker so future activations can detect drift and
+    //    refresh silently without prompting the user.
+    try { fs.writeFileSync(VERSION_MARKER, currentExtensionVersion(context)); }
+    catch (e) { log('version marker write failed', String(e)); }
+
+    if (!silent) {
+      vscode.window.showInformationMessage('Claude Terminal Title — Claude Code skill installed.');
+    }
+    log(silent ? 'silently refreshed wired skill files' : 'Wired up skill + SessionStart hook + /title command');
   } catch (e) {
-    vscode.window.showErrorMessage(`Claude Terminal Title — install failed: ${e.message}`);
+    if (!silent) {
+      vscode.window.showErrorMessage(`Claude Terminal Title — install failed: ${e.message}`);
+    }
     log('install failed', String(e));
   }
 }
@@ -317,6 +391,10 @@ function activate(context) {
   // Periodic rescan at 30s — cheap because terminals already labeled are skipped
   const rescan = setInterval(scanAllTerminals, 30000);
   context.subscriptions.push({ dispose: () => clearInterval(rescan) });
+
+  // If the user already wired up a previous version, silently bring it up to
+  // date with the bundled assets.
+  maybeRefreshInstall(context);
 
   const cfg = vscode.workspace.getConfiguration('claudeTerminalTitle');
   if (!cfg.get('skipClaudeIntegrationPrompt')) {
